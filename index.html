@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <!-- Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+    <!-- LOADING SCREEN -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-box">
+            <div class="loading-spinner"></div>
+            <h3>Inventory Management System</h3>
+            <p id="loadingText">Menghubungkan ke database...</p>
+        </div>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="login-screen hidden">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="login-icon">
+                    <i class="fas fa-boxes-stacked"></i>
+                </div>
+                <h1>Inventory Management</h1>
+                <p>Stock Opname System</p>
+                <div class="connection-status" id="connStatus">
+                    <span class="conn-dot online"></span>
+                    <span>Online - Firebase</span>
+                </div>
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Username</label>
+                    <input type="text" id="loginUsername" placeholder="Masukkan username" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="loginPassword" placeholder="Masukkan password" required>
+                </div>
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i> Masuk
+                </button>
+            </form>
+            <div class="login-footer">
+                <p>Default: admin / admin123</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="mainApp" class="main-app hidden">
+
+        <!-- SIDEBAR -->
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-boxes-stacked"></i>
+                    <span>IMS</span>
+                </div>
+                <button id="sidebarToggle" class="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <div class="sidebar-user">
+                <div class="user-avatar"><i class="fas fa-user-circle"></i></div>
+                <div class="user-info">
+                    <span id="sidebarUsername" class="user-name">Admin</span>
+                    <span id="sidebarRole" class="user-role">Administrator</span>
+                </div>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item active" data-page="home">
+                    <a href="#"><i class="fas fa-home"></i><span>Home</span></a>
+                </li>
+                <li class="menu-item" data-page="formso">
+                    <a href="#"><i class="fas fa-barcode"></i><span>Form SO</span></a>
+                </li>
+                <li class="menu-divider"><span>Data</span></li>
+                <li class="menu-item" data-page="datascan">
+                    <a href="#"><i class="fas fa-database"></i><span>Data Scan</span></a>
+                </li>
+                <li class="menu-item" data-page="masterbarang">
+                    <a href="#"><i class="fas fa-box"></i><span>Master Barang</span></a>
+                </li>
+                <li class="menu-item" data-page="stoksistem">
+                    <a href="#"><i class="fas fa-warehouse"></i><span>Stok Sistem</span></a>
+                </li>
+                <li class="menu-divider"><span>Laporan</span></li>
+                <li class="menu-item" data-page="grafik">
+                    <a href="#"><i class="fas fa-chart-bar"></i><span>Grafik</span></a>
+                </li>
+                <li class="menu-item" data-page="laporanselisih">
+                    <a href="#"><i class="fas fa-exchange-alt"></i><span>Laporan Selisih</span></a>
+                </li>
+                <li class="menu-item" data-page="logactivity">
+                    <a href="#"><i class="fas fa-history"></i><span>Log Activity</span></a>
+                </li>
+                <li class="menu-divider"><span>Lainnya</span></li>
+                <li class="menu-item" data-page="setting">
+                    <a href="#"><i class="fas fa-cog"></i><span>Setting</span></a>
+                </li>
+                <li class="menu-item" data-page="about">
+                    <a href="#"><i class="fas fa-info-circle"></i><span>About</span></a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <header class="top-bar">
+                <button id="mobileSidebarToggle" class="mobile-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="page-title">
+                    <h2 id="pageTitle">Home</h2>
+                </div>
+                <div class="top-bar-actions">
+                    <div class="conn-indicator" id="topConnStatus" title="Status koneksi">
+                        <i class="fas fa-wifi"></i>
+                        <span class="conn-label">Online</span>
+                    </div>
+                    <div class="online-users" id="onlineUsers" title="User online">
+                        <i class="fas fa-users"></i>
+                        <span id="onlineCount">1</span>
+                    </div>
+                    <div class="notification-bell" id="notifBell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notif-badge hidden" id="notifBadge">0</span>
+                    </div>
+                    <div class="current-time" id="currentTime"></div>
+                </div>
+            </header>
+            <div id="pageContent" class="page-content"></div>
+        </main>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- MODAL -->
+    <div id="modalOverlay" class="modal-overlay hidden">
+        <div id="modalContent" class="modal-content"></div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="js/db.js"></script>
+    <script src="js/pages/home.js"></script>
+    <script src="js/pages/formso.js"></script>
+    <script src="js/pages/datascan.js"></script>
+    <script src="js/pages/masterbarang.js"></script>
+    <script src="js/pages/stoksistem.js"></script>
+    <script src="js/pages/laporanselisih.js"></script>
+    <script src="js/pages/logactivity.js"></script>
+    <script src="js/pages/grafik.js"></script>
+    <script src="js/pages/setting.js"></script>
+    <script src="js/pages/about.js"></script>
+    <script src="js/app.js"></script>
+
+</body>
+</html>
